@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>מפת פרויקטים - שמאי מקרקעין</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; }
+    h1 {
+      text-align: center;
+      padding: 14px;
+      background: #1a3a5c;
+      color: white;
+      font-size: 22px;
+      letter-spacing: 1px;
+    }
+    #map { height: calc(100vh - 54px); width: 100%; }
+    .legend {
+      background: white;
+      padding: 10px 14px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      font-size: 13px;
+      line-height: 1.8;
+    }
+    .legend h4 { margin-bottom: 6px; color: #1a3a5c; font-size: 14px; }
+    .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-left: 6px; }
+  </style>
+</head>
+<body>
+  <h1>מפת פרויקטים — תכניות עסקיות</h1>
+  <div id="map"></div>
+
+  <script>
+    const map = L.map('map').setView([32.05, 34.85], 10);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap contributors © CARTO',
+      maxZoom: 19
+    }).addTo(map);
+
+    const cityColors = {
+      'תל אביב': '#e63946',
+      'רמת גן': '#f4a261',
+      'גבעתיים': '#2a9d8f',
+      'חולון': '#457b9d',
+      'הרצליה': '#8338ec',
+      'כפר סבא': '#fb8500',
+      'נתניה': '#06d6a0',
+      'רמלה': '#ef476f',
+      'ירושלים': '#118ab2'
+    };
+
+    function makeIcon(color) {
+      return L.divIcon({
+        className: '',
+        html: `<div style="
+          width:16px; height:16px;
+          background:${color};
+          border:2px solid white;
+          border-radius:50%;
+          box-shadow:0 1px 4px rgba(0,0,0,0.4);
+        "></div>`,
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
+      });
+    }
+
+    const projects = [
+      // גבעתיים: צומת ויצמן + המעיין (מהתמונה + שם הפרויקט)
+      { name: 'גבעתיים - ויצמן המעיין',     city: 'גבעתיים', lat: 32.0714, lng: 34.8084, addr: 'ויצמן / המעיין, גבעתיים' },
+      // הרצליה: מתחם פסאז' רובין - בן גוריון/שינקין (מהמפה)
+      { name: 'הרצליה - פסאז רובין',         city: 'הרצליה',  lat: 32.1668, lng: 34.8439, addr: 'בן גוריון / שינקין, הרצליה' },
+      // חולון: רחוב לאון בלום
+      { name: 'חולון - לאון בלום',           city: 'חולון',   lat: 31.9903, lng: 34.7793, addr: 'לאון בלום, חולון' },
+      // ירושלים: שכונת גילה
+      { name: 'ירושלים - גילה',              city: 'ירושלים', lat: 31.7244, lng: 35.1553, addr: 'גילה, ירושלים' },
+      // כפר סבא: רחוב התפוז (מהתמונה תלת-ממדית)
+      { name: 'כפר סבא - התפוז',             city: 'כפר סבא', lat: 32.1780, lng: 34.9063, addr: 'התפוז, כפר סבא' },
+      // נתניה: גרינבויים/יחיאל (מהמפה - מיקום התכנית)
+      { name: 'נתניה - גרינבויים',           city: 'נתניה',   lat: 32.2874, lng: 34.8600, addr: 'גרינבויים / יחיאל, נתניה' },
+      // רמלה: רחוב צהל
+      { name: 'רמלה - צהל',                  city: 'רמלה',    lat: 31.9296, lng: 34.8749, addr: 'צהל, רמלה' },
+      // רמת גן: שמחה/המתמיד - בין ז' בוסינסקי ואחלזורוב (מהמפה)
+      { name: 'רמת גן - המתמיד',             city: 'רמת גן',  lat: 32.0883, lng: 34.8287, addr: 'שמחה / המתמיד, רמת גן' },
+      // רמת גן: שלם 20-30 ליד דרך הרכסים (מהמפה)
+      { name: 'רמת גן - שלם 20-30',          city: 'רמת גן',  lat: 32.0720, lng: 34.8247, addr: 'שלם 20-30 / דרך הרכסים, רמת גן' },
+      // ת"א: איינשטיין 57-61 (מהתמונה - כיתוב מפורש)
+      { name: 'תל אביב - איינשטיין',         city: 'תל אביב', lat: 32.1034, lng: 34.8340, addr: 'איינשטיין 57-61, תל אביב' },
+      // ת"א: אמוראים
+      { name: 'תל אביב - אמוראים',           city: 'תל אביב', lat: 32.0959, lng: 34.7781, addr: 'אמוראים, תל אביב' },
+      // ת"א: אפקה (מהתמונה - אזור אפקה צפון)
+      { name: 'תל אביב - אפקה',              city: 'תל אביב', lat: 32.1072, lng: 34.8253, addr: 'אפקה, תל אביב' },
+      // ת"א: ארבר 15-47
+      { name: 'תל אביב - ארבר 15-47',        city: 'תל אביב', lat: 32.1092, lng: 34.8303, addr: 'ארבר 15-47, תל אביב' },
+      // ת"א: בורמה - ליד שד' שאול המלך/ירמיהו (מהמפה)
+      { name: 'תל אביב - בורמה',             city: 'תל אביב', lat: 32.0891, lng: 34.7867, addr: 'בורמה, תל אביב' },
+      // ת"א: לאון בלום 19-29
+      { name: 'תל אביב - בלום 19-29',        city: 'תל אביב', lat: 32.0970, lng: 34.7757, addr: 'לאון בלום 19-29, תל אביב' },
+      // ת"א: ברגסון (מהתמונה - pin אדום בשכונה)
+      { name: 'תל אביב - ברגסון',            city: 'תל אביב', lat: 32.0992, lng: 34.7840, addr: 'ברגסון, תל אביב' },
+      // ת"א: ברזיל 6-20 (שכונת בבלי)
+      { name: 'תל אביב - ברזיל 6-20',        city: 'תל אביב', lat: 32.0800, lng: 34.7729, addr: 'ברזיל 6-20, תל אביב' },
+      // ת"א: דובנוב 24 (ליד כיכר המדינה)
+      { name: 'תל אביב - דובנוב 24',         city: 'תל אביב', lat: 32.0784, lng: 34.7812, addr: 'דובנוב 24, תל אביב' },
+      // ת"א: הגיבור האלמוני (מהמפה המנהלית)
+      { name: 'תל אביב - הגיבור האלמוני',    city: 'תל אביב', lat: 32.0681, lng: 34.7889, addr: 'הגיבור האלמוני, תל אביב' },
+      // ת"א: יהודה הנשיא
+      { name: 'תל אביב - יהודה הנשיא',       city: 'תל אביב', lat: 32.0876, lng: 34.7833, addr: 'יהודה הנשיא, תל אביב' },
+      // ת"א: יפת 173-183 - יפו (מהמפה - ים בשמאל, רחוב יפת ברור)
+      { name: 'תל אביב - יפת 173-183',       city: 'תל אביב', lat: 32.0509, lng: 34.7540, addr: 'יפת 173-183, יפו' },
+      // ת"א: יצחק שדה / הפלמח
+      { name: 'תל אביב - יצחק שדה הפלמח',   city: 'תל אביב', lat: 32.0797, lng: 34.7853, addr: 'יצחק שדה / הפלמח, תל אביב' },
+      // ת"א: לאון בלום/ברזיל/הברון הירש (מהמפה - מתחם ברור עם שמות רחובות)
+      { name: 'תל אביב - לאון בלום ברזיל',   city: 'תל אביב', lat: 32.0978, lng: 34.7742, addr: 'לאון בלום / ברזיל / הברון הירש, תל אביב' },
+      // ת"א: קהילת קנדה (ליד דרך נמיר)
+      { name: 'תל אביב - קהילת קנדה',        city: 'תל אביב', lat: 32.1060, lng: 34.8062, addr: 'קהילת קנדה, תל אביב' },
+    ];
+
+    projects.forEach(p => {
+      const color = cityColors[p.city] || '#555';
+      L.marker([p.lat, p.lng], { icon: makeIcon(color) })
+        .addTo(map)
+        .bindPopup(`<b style="font-size:14px">${p.name}</b><br><span style="color:#444;font-size:12px">📍 ${p.addr}</span>`);
+    });
+
+    // Legend
+    const legend = L.control({ position: 'bottomright' });
+    legend.onAdd = function() {
+      const div = L.DomUtil.create('div', 'legend');
+      div.innerHTML = '<h4>ערים</h4>';
+      for (const [city, color] of Object.entries(cityColors)) {
+        div.innerHTML += `<div><span class="dot" style="background:${color}"></span>${city}</div>`;
+      }
+      return div;
+    };
+    legend.addTo(map);
+  </script>
+</body>
+</html>
